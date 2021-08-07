@@ -1,8 +1,8 @@
-import * as _math from 'mathjs'; // Hope this line doesn't cause any issue
+import * as _math from 'mathjs' // Hope this line doesn't cause any issue
 // In worst case leverage esbuild, use standard import and leverage external feature
 
 declare global {
-  const math: typeof _math;
+  const math: typeof _math
 }
 
 class cut {
@@ -27,7 +27,7 @@ class cut {
 
 class FCPXML {
   // Constants:
-  xmlParser = new DOMParser();
+  xmlParser = new DOMParser()
   // Note: below xml is only for video
   xml = this.xmlParser.parseFromString(
     '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE fcpxml><fcpxml version="1.9"><resources>' +
@@ -38,9 +38,9 @@ class FCPXML {
     '<project name="output">' +
     '<sequence format="r0" duration="271/15s" tcFormat="NDF" tcStart="3600/1s">' +
     '<spine>' +
-    '</spine></sequence></project></event></library></fcpxml>', "text/xml")
-    // TODO: setup width and height properly
-    // TODO: merge tcStart with same properly in cuts
+    '</spine></sequence></project></event></library></fcpxml>', 'text/xml')
+  // TODO: setup width and height properly
+  // TODO: merge tcStart with same properly in cuts
   // Internal States
   MAX_CUTS_TO_SAVE: number
   duration!: number // Well... Not the ideal practice but works
@@ -57,36 +57,37 @@ class FCPXML {
   }
 
   // Write cuts to the xml
-  async write() {
+  async write () {
 
   }
 
-  async setDuration() {
+  async setDuration () {
     // Load the video in an HTML element
     let video = document.createElement('video')
     video.src = URL.createObjectURL(this.media)
     video.load() // not sure if this is needed
 
     // Wait for the video to finish loading
-    await new Promise<void>(resolve => (video.ondurationchange = () => resolve()));
+    await new Promise<void>(resolve => (video.ondurationchange = () => resolve()))
 
     this.duration = video.duration
     video.remove()
   }
 
-  async addCut(cut: cut) {
+  async addCut (cut: cut) {
     this.cuts.push(cut)
   }
 
-  async addCuts(cuts: cut[]) {
+  async addCuts (cuts: cut[]) {
     this.cuts.concat(cuts)
   }
 
-  async download(objectURL: string) {
+  async download (objectURL: string) {
     let link = document.createElement('a')
-    link.href = objectURL; link.download = `result.fcpxml`
+    link.href = objectURL
+    link.download = `result.fcpxml`
     document.body.appendChild(link)
-    link.click();
+    link.click()
     link.remove()
   }
 }
@@ -94,7 +95,7 @@ class FCPXML {
 // Parses output (blob) from ffmpeg
 // and convert to cuts
 class FFmpegOutputParser {
-  static async getCuts(ffmpeg_out: Blob) {
+  static async getCuts (ffmpeg_out: Blob) {
     //
     const cuts: cut[] = []
     const out = await ffmpeg_out.text()
@@ -116,5 +117,6 @@ class FFmpegOutputParser {
         times[0] = -1.0
         times[1] = -1.0
       }
+    }
   }
-}}
+}
