@@ -1,13 +1,20 @@
-/// <reference path="types/index.d.ts" />
-// import * as FFmpeg from './types'; // TODO: if it doesn't work, try declare global var
-// declare global ffmpeg: ffmpeg
+// Show TypeScript that:
+//  - Constant FFmpeg does exist
+//  - It exists as a module
+import * as _FFmpeg from '@ffmpeg/ffmpeg';
 
-// declare var FFmpeg
-import { FFmpeg } from './types'
+declare global {
+  const FFmpeg: typeof _FFmpeg;
+}
 
-let createFFmpeg, fetchFile: { (data: string | File | Blob): Promise<Uint8Array> }, ffmpeg: FFmpeg.ffmpeg
+// Key components for ffmpeg library, declared to be initialized later in load()
+let createFFmpeg, fetchFile: { (data: string | File | Blob): Promise<Uint8Array> }, ffmpeg: _FFmpeg.FFmpeg
+
+// Execute load() when window (main page) loaded
 window.onload = () => load()
 
+// Loads FFmpeg library if browser is supported
+// Otherwise display error and return -1 prematurely
 async function load () {
   if (typeof SharedArrayBuffer === 'undefined') {
     document.getElementById('message')!.innerHTML =
@@ -19,16 +26,19 @@ async function load () {
   ffmpeg = createFFmpeg({ log: true })
   await ffmpeg.load() // key line: loading wasm
 }
+
+// Workaround for TypeScript's limitation of detecting
+// that file can be a attribute of target
+// Credit for StackOverflow
 interface HTMLInputEvent extends Event {
   target: HTMLInputElement & EventTarget;
 }
 
-const trim = async (event: HTMLInputEvent) => {
-  // Explanation:
-  // Trim is called by EventListener elm
-  // EventListener feeds in Event as input
-  // then {target : {files}} is just a destructuring assignment
-  // standing for Event.target.files
+// Called after user uploaded a video/audio file
+// Detects the silent interval
+// and displays an fcpxml download prompt (for which contains the silent intervals)
+const main = async (event: HTMLInputEvent) => {
+
   const message = document.getElementById('message')!
   // OH MY GOD it picked it up
   // The not selecting file causing error
@@ -67,8 +77,8 @@ const trim = async (event: HTMLInputEvent) => {
     try {
       const outputBlob = new Blob([data.buffer], { type: '.txt' })
       // const objectURL = URL.createObjectURL(outputBlob); // might not be needed
-      // await download(objectURL) // TODO: fix this
-      await process(outputBlob, videoFile)
+      // await download(objectURL)
+      await process(outputBlob, videoFile) // TODO: replace it with a class/module
     } catch (error) {
       console.log(error)
     }
@@ -79,14 +89,12 @@ const trim = async (event: HTMLInputEvent) => {
   message.innerHTML = 'Choose a Clip'
 }
 
-async function DurationChange (video) {
-  return new Promise(resolve => (video.ondurationchange = () => resolve()))
+// Wait for video duration to refresh
+// Application: other functions can use it as an intermediary step to get video duration
+async function waitForDurationChange (video: HTMLVideoElement) {
+  return new Promise<void>(resolve => (video.ondurationchange = () => resolve()))
 }
 
+// Execute main when user finishes uploading
 const elm = document.getElementById('media-upload')
-elm!.addEventListener('change', trim)
-
-// Aidan's works:
-
-
-
+elm!.addEventListener('change', main)
