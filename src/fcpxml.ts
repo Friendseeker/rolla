@@ -40,20 +40,20 @@ class FCPXML {
     '<spine>' +
     '</spine></sequence></project></event></library></fcpxml>', "text/xml")
     // TODO: setup width and height properly
+    // TODO: merge tcStart with same properly in cuts
   // Internal States
   MAX_CUTS_TO_SAVE: number
-  duration: number
+  duration!: number // Well... Not the ideal practice but works
   cuts: cut[] = []
   media: File
 
   // Only to set the states
   // Don't do any processing
-  constructor (media: File, MAX_CUTS_TO_SAVE = 50) {
+  constructor (media: File, cuts: cut[], MAX_CUTS_TO_SAVE = 50) {
     this.media = media // If I want to determine media type (video/audio), add it here
+    this.cuts = cuts
     this.MAX_CUTS_TO_SAVE = MAX_CUTS_TO_SAVE
-    this.setDuration().then(
-
-    )
+    this.setDuration().then()
   }
 
   // Write cuts to the xml
@@ -70,8 +70,8 @@ class FCPXML {
     // Wait for the video to finish loading
     await new Promise<void>(resolve => (video.ondurationchange = () => resolve()));
 
-    // Set duration
     this.duration = video.duration
+    video.remove()
   }
 
   async addCut(cut: cut) {
@@ -89,7 +89,6 @@ class FCPXML {
     link.click();
     link.remove()
   }
-
 }
 
 // Parses output (blob) from ffmpeg
