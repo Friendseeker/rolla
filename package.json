@@ -22,6 +22,7 @@
   "homepage": "https://github.com/Friendseeker/rolla#readme",
   "devDependencies": {
     "@ffmpeg/ffmpeg": "^0.10.1",
-    "express": "^4.17.1"
+    "express": "^4.17.1",
+    "mathjs": "^9.4.4"
   }
 }

@@ -1,7 +1,11 @@
+// Let Typescript && IDE to access type info from fcpxml.ts
+/// <reference path="fcpxml.ts"/>
+
 // Show TypeScript that:
 //  - Constant FFmpeg does exist
 //  - It exists as a module
-import * as _FFmpeg from '@ffmpeg/ffmpeg';
+import * as _FFmpeg from '@ffmpeg/ffmpeg'; // Hope this line doesn't cause any issue
+// In worst case leverage esbuild, use standard import and leverage external feature
 
 declare global {
   const FFmpeg: typeof _FFmpeg;
@@ -75,10 +79,10 @@ const main = async (event: HTMLInputEvent) => {
     let data = ffmpeg.FS('readFile', 'plswork.txt')
     // const objectURL = URL.createObjectURL(new Blob([data.buffer], {type: '.txt'}));
     try {
-      const outputBlob = new Blob([data.buffer], { type: '.txt' })
-      // const objectURL = URL.createObjectURL(outputBlob); // might not be needed
+      const output = new Blob([data.buffer], { type: '.txt' })
+      // const objectURL = URL.createObjectURL(output); // might not be needed
       // await download(objectURL)
-      await process(outputBlob, videoFile) // TODO: replace it with a class/module
+      await process(output, videoFile) // TODO: replace it with a class/module
     } catch (error) {
       console.log(error)
     }
