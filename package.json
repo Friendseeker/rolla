@@ -1,0 +1,26 @@
+{
+  "name": "rolla",
+  "version": "0.9.0",
+  "description": "Automatic A-Roll Editor",
+  "main": "dev/tools/server.js",
+  "scripts": {
+    "test": "echo \"TODO Need to Implement tests with Selenium\"",
+    "start": "rsync dev/tools/server.js src/server.js && node src/server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Friendseeker/rolla.git"
+  },
+  "keywords": [
+    "ffmpeg"
+  ],
+  "author": "Friendseeker",
+  "license": "GPL-3.0-only",
+  "bugs": {
+    "url": "https://github.com/Friendseeker/rolla/issues"
+  },
+  "homepage": "https://github.com/Friendseeker/rolla#readme",
+  "devDependencies": {
+    "express": "^4.17.1"
+  }
+}
