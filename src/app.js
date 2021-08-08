@@ -3,9 +3,12 @@
   function rationalize(value) {
     return math.format(math.fraction(value), { fraction: "ratio" }) + "s";
   }
+  function createXMLElement(tagName) {
+    return document.implementation.createDocument(null, tagName);
+  }
   var AssetClip = class {
     constructor(cut, prevOffset, fileName) {
-      this.assetClip = document.createElement("asset-clip");
+      this.assetClip = createXMLElement("asset-clip");
       this.start = cut.start;
       this.duration = cut.end - cut.start;
       this.offset = prevOffset + this.duration;
@@ -64,7 +67,7 @@
     }
     setAsset() {
       const resources = this.xml.querySelector("resources");
-      const asset = document.createElement("asset");
+      const asset = createXMLElement("asset");
       setAttributes(asset, {
         "hasVideo": "1",
         "audioSources": "1",
@@ -76,7 +79,7 @@
         "id": "r2",
         "duration": rationalize(this.duration)
       });
-      const media_rep = document.createElement("media-rep");
+      const media_rep = createXMLElement("media-rep");
       setAttributes(media_rep, {
         kind: "original-media",
         src: ""

@@ -11,8 +11,13 @@ function rationalize (value: number) {
   return math.format(math.fraction(value), { fraction: 'ratio' }) + 's'
 }
 
+// Produces an XMLElement
+function createXMLElement(tagName: string) {
+  return document.implementation.createDocument(null, tagName);
+}
+
 export class AssetClip {
-  assetClip = document.createElement('asset-clip')
+  assetClip = createXMLElement('asset-clip')
   start: number
   duration: number
   offset: number
@@ -135,7 +140,7 @@ export class FCPXML {
     // Navigate to resources
     const resources = this.xml.querySelector('resources')
     // Add asset (no attributes)
-    const asset = document.createElement('asset')
+    const asset = createXMLElement('asset')
     // Set attributes for asset
     setAttributes(asset, {
       'hasVideo': '1',
@@ -149,7 +154,7 @@ export class FCPXML {
       'duration': rationalize(this.duration)
     })
     // Add child node to asset
-    const media_rep = document.createElement('media-rep')
+    const media_rep = createXMLElement('media-rep')
     setAttributes(media_rep, {
       kind: 'original-media',
       src: '' // TODO: determine if there's a better way to check src
