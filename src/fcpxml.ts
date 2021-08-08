@@ -33,17 +33,11 @@ export class AssetClip {
 export class Cut {
   start: number
   end: number
-  enabled: boolean
-  offset: string
-  startTimeCode: number // In seconds, represents starting offset
   // Refer to https://beginnersapproach.com/davinci-resolve-start-timecode/
 
-  constructor (start: number, end: number, enabled: boolean = false, startTimeCode: number = 3600) {
+  constructor (start: number, end: number) {
     this.start = start
     this.end = end
-    this.enabled = enabled
-    this.startTimeCode = startTimeCode
-    this.offset = start === 0 ? `${startTimeCode}/1` : math.fraction(3600 + startTimeCode).toString()
   }
 }
 

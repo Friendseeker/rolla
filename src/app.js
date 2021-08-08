@@ -19,12 +19,9 @@
     }
   };
   var Cut = class {
-    constructor(start, end, enabled = false, startTimeCode = 3600) {
+    constructor(start, end) {
       this.start = start;
       this.end = end;
-      this.enabled = enabled;
-      this.startTimeCode = startTimeCode;
-      this.offset = start === 0 ? `${startTimeCode}/1` : math.fraction(3600 + startTimeCode).toString();
     }
   };
   var FCPXML = class {
