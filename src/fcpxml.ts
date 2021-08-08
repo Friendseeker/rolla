@@ -33,6 +33,7 @@ export class AssetClip {
 export class Cut {
   start: number
   end: number
+
   // Refer to https://beginnersapproach.com/davinci-resolve-start-timecode/
 
   constructor (start: number, end: number) {
@@ -180,11 +181,20 @@ export class FCPXML {
   }
 
   async download () {
+
+    // Generate a download button (to be clicked on)
     let link = document.createElement('a')
-    link.href = URL.createObjectURL(this.xml)
+
+    // Serialize and attach this.xml to the download button
+    const xmlSerializer = new XMLSerializer()
+    link.href = URL.createObjectURL(new Blob([xmlSerializer.serializeToString(this.xml)],
+      { type: 'text/xml' }))
     link.download = `result.fcpxml`
     document.body.appendChild(link)
+
+    // Click the download button
     link.click()
+    // Remove the download button
     link.remove()
   }
 }

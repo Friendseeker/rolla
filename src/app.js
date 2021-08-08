@@ -100,7 +100,8 @@
     }
     async download() {
       let link = document.createElement("a");
-      link.href = URL.createObjectURL(this.xml);
+      const xmlSerializer = new XMLSerializer();
+      link.href = URL.createObjectURL(new Blob([xmlSerializer.serializeToString(this.xml)], { type: "text/xml" }));
       link.download = `result.fcpxml`;
       document.body.appendChild(link);
       link.click();
