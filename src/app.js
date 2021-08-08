@@ -4,7 +4,7 @@
     return math.format(math.fraction(value), { fraction: "ratio" }) + "s";
   }
   function createXMLElement(tagName) {
-    return document.implementation.createDocument(null, tagName);
+    return document.implementation.createDocument(null, tagName).documentElement;
   }
   var AssetClip = class {
     constructor(cut, prevOffset, fileName) {

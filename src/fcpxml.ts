@@ -13,7 +13,7 @@ function rationalize (value: number) {
 
 // Produces an XMLElement
 function createXMLElement(tagName: string) {
-  return document.implementation.createDocument(null, tagName);
+  return document.implementation.createDocument(null, tagName).documentElement;
 }
 
 export class AssetClip {
