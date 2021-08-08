@@ -1,11 +1,36 @@
-import * as _math from 'mathjs' // Hope this line doesn't cause any issue
+import * as _math from 'mathjs'
+// import * as console from 'console' // Hope this line doesn't cause any issue
 // In worst case leverage esbuild, use standard import and leverage external feature
 
 declare global {
   const math: typeof _math
 }
 
-class cut {
+export class AssetClip {
+  assetClip = document.createElement('asset-clip')
+  start: number
+  duration: number
+  offset: number
+
+  constructor (cut: Cut, prevOffset: number, fileName: string) {
+    this.start = cut.start
+    this.duration = cut.end - cut.start
+    this.offset = prevOffset + this.duration
+    // Fill in above info in assetClip
+    Object.assign(this.assetClip, {
+      offset: math.fraction(this.offset).toString(),
+      name: fileName,
+      format: 'r1',
+      tcFormat: 'NDF',
+      start: this.start,
+      ref: 'r2', // TODO: should r2 be factored out into separate variable?
+      enabled: '1',
+      duration: this.duration
+    })
+  }
+}
+
+export class Cut {
   start: number
   end: number
   enabled: boolean
@@ -25,9 +50,10 @@ class cut {
 // Let FCPXML only support Video First
 // TODO: upgrade to support Audio CLEANLY
 
-class FCPXML {
+export class FCPXML {
   // Constants:
-  xmlParser = new DOMParser()
+  xmlParser = new DOMParser() // Parser
+  // var processor = new XSLTProcessor(); Not sure if I will need to use xpath + xslt
   // Note: below xml is only for video
   xml = this.xmlParser.parseFromString(
     '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE fcpxml><fcpxml version="1.9"><resources>' +
@@ -41,24 +67,97 @@ class FCPXML {
     '</spine></sequence></project></event></library></fcpxml>', 'text/xml')
   // TODO: setup width and height properly
   // TODO: merge tcStart with same properly in cuts
+
   // Internal States
-  MAX_CUTS_TO_SAVE: number
+  // MAX_CUTS_TO_SAVE: number
   duration!: number // Well... Not the ideal practice but works
-  cuts: cut[] = []
+  cuts: Cut[] = []
   media: File
 
   // Only to set the states
   // Don't do any processing
-  constructor (media: File, cuts: cut[], MAX_CUTS_TO_SAVE = 50) {
+  constructor (media: File, cuts: Cut[]) {
     this.media = media // If I want to determine media type (video/audio), add it here
     this.cuts = cuts
-    this.MAX_CUTS_TO_SAVE = MAX_CUTS_TO_SAVE
+    // this.MAX_CUTS_TO_SAVE = MAX_CUTS_TO_SAVE
     this.setDuration().then()
+
   }
 
-  // Write cuts to the xml
+  // Write changes to the xml
   async write () {
+    // Adds the input file as <asset> under <resources>
+    this.setAsset()
+    this.setAssetClips()
+  }
 
+  // Adds the Clips to the HTML
+  setAssetClips () {
+
+    // Calculate duration (for <sequence>)
+    // duration: duration of video after cut
+    for (let cut of this.cuts) {
+      this.duration -= cut.end - cut.start
+    }
+
+    // Add duration to <sequence>
+    const sequence = this.xml.querySelector('sequence')
+    if (sequence == null) {
+      console.error('Either Default xml preset or selection is flawed')
+      return
+    }
+    sequence.setAttribute('duration', math.fraction(this.duration).toString())
+
+    // Set Asset-clips
+
+    // Selecting spine
+    const spine = this.xml.querySelector('spine')
+    if (spine == null) {
+      console.error('Either Default xml preset or selection is flawed')
+      return
+    }
+    // And add each Asset-clips as spine's child
+    let prevOffset = 3600 // TODO: merge all incidences of 3600 together
+    for (let cut of this.cuts) {
+      const assetClip = new AssetClip(cut, prevOffset, this.media.name)
+      spine.appendChild(assetClip.assetClip)
+      prevOffset = assetClip.offset
+    }
+  }
+
+  // Add proper asset value
+  setAsset () {
+    // Navigate to resources
+    const resources = this.xml.querySelector('resources')
+    // Add asset (no attributes)
+    const asset = document.createElement('format')
+    // Set attributes for asset
+    Object.assign(asset, {
+      hasVideo: '1',
+      audioSources: '1',
+      hasAudio: '1',
+      name: this.media.name,
+      format: 'r1',
+      start: '0/1s',
+      audioChannels: '2', // TODO: address single channel old school case
+      id: 'r2',
+      duration: this.duration
+    })
+
+    // Add child node to asset
+    const media_rep = document.createElement('media-rep')
+    Object.assign(media_rep, {
+      kind: 'original-media',
+      src: '' // TODO: determine if there's a better way to check src
+    })
+
+    // Defensive coding
+    // Ideally this should never be executed
+    if (resources == null) {
+      console.error('Either Default xml preset or selection is flawed')
+      return
+    }
+    resources.appendChild(asset)
   }
 
   async setDuration () {
@@ -74,17 +173,17 @@ class FCPXML {
     video.remove()
   }
 
-  async addCut (cut: cut) {
+  async addCut (cut: Cut) {
     this.cuts.push(cut)
   }
 
-  async addCuts (cuts: cut[]) {
+  async addCuts (cuts: Cut[]) {
     this.cuts.concat(cuts)
   }
 
-  async download (objectURL: string) {
+  async download () {
     let link = document.createElement('a')
-    link.href = objectURL
+    link.href = URL.createObjectURL(this.xml)
     link.download = `result.fcpxml`
     document.body.appendChild(link)
     link.click()
@@ -94,10 +193,11 @@ class FCPXML {
 
 // Parses output (blob) from ffmpeg
 // and convert to cuts
-class FFmpegOutputParser {
+// Credit to Aidan
+export class FFmpegOutputParser {
   static async getCuts (ffmpeg_out: Blob) {
     //
-    const cuts: cut[] = []
+    const cuts: Cut[] = []
     const out = await ffmpeg_out.text()
     // Break output line by line
     const split = out.split('\n')
@@ -112,11 +212,12 @@ class FFmpegOutputParser {
         times[1] = parseFloat(line.split('=')[1])
       }
       if (!times.includes(-1.0)) {
-        cuts.push(new cut(times[0], times[1]))
+        cuts.push(new Cut(times[0], times[1]))
         // console.log(`${times[0]} ${times[1]}`)
         times[0] = -1.0
         times[1] = -1.0
       }
     }
+    return cuts
   }
 }

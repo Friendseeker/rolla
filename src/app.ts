@@ -4,11 +4,12 @@
 // Show TypeScript that:
 //  - Constant FFmpeg does exist
 //  - It exists as a module
-import * as _FFmpeg from '@ffmpeg/ffmpeg'; // Hope this line doesn't cause any issue
+import * as _FFmpeg from '@ffmpeg/ffmpeg' // Hope this line doesn't cause any issue
+import { FCPXML, FFmpegOutputParser } from './fcpxml'
 // In worst case leverage esbuild, use standard import and leverage external feature
 
 declare global {
-  const FFmpeg: typeof _FFmpeg;
+  const FFmpeg: typeof _FFmpeg
 }
 
 // Key components for ffmpeg library, declared to be initialized later in load()
@@ -23,7 +24,7 @@ async function load () {
   if (typeof SharedArrayBuffer === 'undefined') {
     document.getElementById('message')!.innerHTML =
       'Error: Please use latest Chrome/Firefox/Edge'
-      return -1  // TODO: determine if it does break execution
+    return -1  // TODO: determine if it does break execution
   }
   createFFmpeg = FFmpeg.createFFmpeg // ffmpeg is exported from ffmpeg script
   fetchFile = FFmpeg.fetchFile
@@ -35,19 +36,19 @@ async function load () {
 // that file can be a attribute of target
 // Credit for StackOverflow
 interface HTMLInputEvent extends Event {
-  target: HTMLInputElement & EventTarget;
+  target: HTMLInputElement & EventTarget
 }
 
 // Called after user uploaded a video/audio file
 // Detects the silent interval
 // and displays an fcpxml download prompt (for which contains the silent intervals)
-const main = async (event: HTMLInputEvent) => {
+const main = async (event: Event) => {
 
   const message = document.getElementById('message')!
   // OH MY GOD it picked it up
   // The not selecting file causing error
   // as it notified me automatically that videoFile can be null
-  if (event.target.files == null) {
+  if ((<HTMLInputEvent>event).target.files == null) { // Cast
     document.getElementById('message')!.innerHTML =
       'Error: You did not select any files!'
     return -1  // TODO: determine if it does break execution
@@ -82,7 +83,12 @@ const main = async (event: HTMLInputEvent) => {
       const output = new Blob([data.buffer], { type: '.txt' })
       // const objectURL = URL.createObjectURL(output); // might not be needed
       // await download(objectURL)
-      await process(output, videoFile) // TODO: replace it with a class/module
+
+      // Parse output to cuts
+      const cuts = await FFmpegOutputParser.getCuts(output)
+      const fcpxml = new FCPXML(videoFile, cuts)
+      await fcpxml.write()
+      await fcpxml.download()
     } catch (error) {
       console.log(error)
     }
@@ -91,12 +97,6 @@ const main = async (event: HTMLInputEvent) => {
     await new Promise(r => setTimeout(r, 1000)) // sleep for 1 sec
   }
   message.innerHTML = 'Choose a Clip'
-}
-
-// Wait for video duration to refresh
-// Application: other functions can use it as an intermediary step to get video duration
-async function waitForDurationChange (video: HTMLVideoElement) {
-  return new Promise<void>(resolve => (video.ondurationchange = () => resolve()))
 }
 
 // Execute main when user finishes uploading
