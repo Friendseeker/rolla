@@ -98,13 +98,13 @@ For this example file, exactly one part of the video was cutted out (2s - 4s). T
 
 ### Offset, start, duration
 
-Note that we now have 2 <asset-clip> instead of 1 after the cut. We can then confirm that <asset-clip\> represent different parts of the timeline, and the content & position of the asset clips are dictated by <asset-clip\> attributes.
+Note that we now have 2 <asset-clip\> instead of 1 after the cut. We can then confirm that <asset-clip\> represent different parts of the timeline, and the content & position of the asset clips are dictated by <asset-clip\> attributes.
 
-Offset: the start of an <asset-clip> in the timeline (using timeline as reference frame).
+Offset: the start of an <asset-clip\> in the timeline (using timeline as reference frame).
 
-Duration: the duration of an <asset-clip>
+Duration: the duration of an <asset-clip\>
 
-ref (as review): reference to the raw video <asset-clip> is based on
+ref (as review): reference to the raw video <asset-clip\> is based on
 
 Start: along with duration, decides which part of video from the raw video should be taken. (e.g. 4s - 15s from video means start at 4s and duration of 11s)
 
