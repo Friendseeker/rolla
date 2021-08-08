@@ -5,7 +5,8 @@
   "main": "dev/tools/server.js",
   "scripts": {
     "test": "echo \"TODO Need to Implement tests with Selenium\"",
-    "start": "rsync dev/tools/server.js src/server.js && node src/server.js"
+    "start": "rsync dev/tools/server.js src/server.js && node src/server.js",
+    "build": "esbuild src/app.ts --bundle --outfile=src/app.js --target=chrome95,firefox92"
   },
   "repository": {
     "type": "git",
@@ -22,6 +23,7 @@
   "homepage": "https://github.com/Friendseeker/rolla#readme",
   "devDependencies": {
     "@ffmpeg/ffmpeg": "^0.10.1",
+    "esbuild": "^0.12.19",
     "express": "^4.17.1",
     "mathjs": "^9.4.4"
   }
