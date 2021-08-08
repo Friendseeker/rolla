@@ -6,6 +6,11 @@ declare global {
   const math: typeof _math
 }
 
+// Rationalize a decimal to fraction (in seconds)
+function rationalize (value: number) {
+  return math.format(math.fraction(value), { fraction: 'ratio' }) + 's'
+}
+
 export class AssetClip {
   assetClip = document.createElement('asset-clip')
   start: number
@@ -17,16 +22,17 @@ export class AssetClip {
     this.duration = cut.end - cut.start
     this.offset = prevOffset + this.duration
     // Fill in above info in assetClip
-    Object.assign(this.assetClip, {
-      offset: math.fraction(this.offset).toString(),
-      name: fileName,
-      format: 'r1',
-      tcFormat: 'NDF',
-      start: this.start,
-      ref: 'r2', // TODO: should r2 be factored out into separate variable?
-      enabled: '1',
-      duration: this.duration
-    })
+    setAttributes(this.assetClip,
+      {
+        'offset': rationalize(this.offset),
+        'name': fileName,
+        'format': 'r1',
+        'tcFormat': 'NDF',
+        'start': rationalize(this.start),
+        'ref': 'r2', // TODO: should r2 be factored out into separate variable?
+        'enabled': '1',
+        'duration': rationalize(this.duration)
+      })
   }
 }
 
@@ -105,7 +111,7 @@ export class FCPXML {
       console.error('Either Default xml preset or selection is flawed')
       return
     }
-    sequence.setAttribute('duration', math.fraction(this.duration).toString())
+    sequence.setAttribute('duration', rationalize(this.duration))
 
     // Set Asset-clips
 
@@ -129,27 +135,26 @@ export class FCPXML {
     // Navigate to resources
     const resources = this.xml.querySelector('resources')
     // Add asset (no attributes)
-    const asset = document.createElement('format')
+    const asset = document.createElement('asset')
     // Set attributes for asset
-    Object.assign(asset, {
-      hasVideo: '1',
-      audioSources: '1',
-      hasAudio: '1',
-      name: this.media.name,
-      format: 'r1',
-      start: '0/1s',
-      audioChannels: '2', // TODO: address single channel old school case
-      id: 'r2',
-      duration: this.duration
+    setAttributes(asset, {
+      'hasVideo': '1',
+      'audioSources': '1',
+      'hasAudio': '1',
+      'name': this.media.name,
+      'format': 'r1',
+      'start': '0/1s',
+      'audioChannels': '2', // TODO: address single channel old school case
+      'id': 'r2',
+      'duration': rationalize(this.duration)
     })
-
     // Add child node to asset
     const media_rep = document.createElement('media-rep')
-    Object.assign(media_rep, {
+    setAttributes(media_rep, {
       kind: 'original-media',
       src: '' // TODO: determine if there's a better way to check src
     })
-
+    asset.appendChild(media_rep)
     // Defensive coding
     // Ideally this should never be executed
     if (resources == null) {
@@ -187,8 +192,13 @@ export class FCPXML {
 
     // Serialize and attach this.xml to the download button
     const xmlSerializer = new XMLSerializer()
-    link.href = URL.createObjectURL(new Blob([xmlSerializer.serializeToString(this.xml)],
+    link.href = URL.createObjectURL(
+      new Blob([
+      xmlSerializer.serializeToString(this.xml).
+      replaceAll('xmlns="http://www.w3.org/1999/xhtml"', '')],
       { type: 'text/xml' }))
+    // link.href = URL.createObjectURL(new Blob([this.xml.documentElement.outerHTML],
+    //   { type: 'text/xml' }))
     link.download = `result.fcpxml`
     document.body.appendChild(link)
 
@@ -196,6 +206,13 @@ export class FCPXML {
     link.click()
     // Remove the download button
     link.remove()
+  }
+
+}
+
+function setAttributes (element: Element, Attrs: { [key: string]: string }) {
+  for (let key in Attrs) {
+    element.setAttribute(key, Attrs[key])
   }
 }
 

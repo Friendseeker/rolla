@@ -1,20 +1,23 @@
 (() => {
   // src/fcpxml.ts
+  function rationalize(value) {
+    return math.format(math.fraction(value), { fraction: "ratio" }) + "s";
+  }
   var AssetClip = class {
     constructor(cut, prevOffset, fileName) {
       this.assetClip = document.createElement("asset-clip");
       this.start = cut.start;
       this.duration = cut.end - cut.start;
       this.offset = prevOffset + this.duration;
-      Object.assign(this.assetClip, {
-        offset: math.fraction(this.offset).toString(),
-        name: fileName,
-        format: "r1",
-        tcFormat: "NDF",
-        start: this.start,
-        ref: "r2",
-        enabled: "1",
-        duration: this.duration
+      setAttributes(this.assetClip, {
+        "offset": rationalize(this.offset),
+        "name": fileName,
+        "format": "r1",
+        "tcFormat": "NDF",
+        "start": rationalize(this.start),
+        "ref": "r2",
+        "enabled": "1",
+        "duration": rationalize(this.duration)
       });
     }
   };
@@ -46,7 +49,7 @@
         console.error("Either Default xml preset or selection is flawed");
         return;
       }
-      sequence.setAttribute("duration", math.fraction(this.duration).toString());
+      sequence.setAttribute("duration", rationalize(this.duration));
       const spine = this.xml.querySelector("spine");
       if (spine == null) {
         console.error("Either Default xml preset or selection is flawed");
@@ -61,23 +64,24 @@
     }
     setAsset() {
       const resources = this.xml.querySelector("resources");
-      const asset = document.createElement("format");
-      Object.assign(asset, {
-        hasVideo: "1",
-        audioSources: "1",
-        hasAudio: "1",
-        name: this.media.name,
-        format: "r1",
-        start: "0/1s",
-        audioChannels: "2",
-        id: "r2",
-        duration: this.duration
+      const asset = document.createElement("asset");
+      setAttributes(asset, {
+        "hasVideo": "1",
+        "audioSources": "1",
+        "hasAudio": "1",
+        "name": this.media.name,
+        "format": "r1",
+        "start": "0/1s",
+        "audioChannels": "2",
+        "id": "r2",
+        "duration": rationalize(this.duration)
       });
       const media_rep = document.createElement("media-rep");
-      Object.assign(media_rep, {
+      setAttributes(media_rep, {
         kind: "original-media",
         src: ""
       });
+      asset.appendChild(media_rep);
       if (resources == null) {
         console.error("Either Default xml preset or selection is flawed");
         return;
@@ -101,13 +105,20 @@
     async download() {
       let link = document.createElement("a");
       const xmlSerializer = new XMLSerializer();
-      link.href = URL.createObjectURL(new Blob([xmlSerializer.serializeToString(this.xml)], { type: "text/xml" }));
+      link.href = URL.createObjectURL(new Blob([
+        xmlSerializer.serializeToString(this.xml).replaceAll('xmlns="http://www.w3.org/1999/xhtml"', "")
+      ], { type: "text/xml" }));
       link.download = `result.fcpxml`;
       document.body.appendChild(link);
       link.click();
       link.remove();
     }
   };
+  function setAttributes(element, Attrs) {
+    for (let key in Attrs) {
+      element.setAttribute(key, Attrs[key]);
+    }
+  }
   var FFmpegOutputParser = class {
     static async getCuts(ffmpeg_out) {
       const cuts = [];
