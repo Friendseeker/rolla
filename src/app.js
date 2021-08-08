@@ -31,9 +31,9 @@
       this.cuts = [];
       this.media = media;
       this.cuts = cuts;
-      this.setDuration().then();
     }
     async write() {
+      await this.setDuration();
       this.setAsset();
       this.setAssetClips();
     }

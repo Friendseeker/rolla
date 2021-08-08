@@ -74,13 +74,17 @@ export class FCPXML {
     this.media = media // If I want to determine media type (video/audio), add it here
     this.cuts = cuts
     // this.MAX_CUTS_TO_SAVE = MAX_CUTS_TO_SAVE
-    this.setDuration().then()
+    // this.setDuration().then()
+    // Above code causes premature return
+    // duration is set long after other class methods are called...
 
   }
 
   // Write changes to the xml
+  // Also handles async operations that cannot be placed in constructor (Factory)
   async write () {
     // Adds the input file as <asset> under <resources>
+    await this.setDuration()
     this.setAsset()
     this.setAssetClips()
   }
