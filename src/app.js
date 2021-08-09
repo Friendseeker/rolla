@@ -107,14 +107,15 @@
     }
     async download() {
       let link = document.createElement("a");
-      const xmlSerializer = new XMLSerializer();
-      link.href = URL.createObjectURL(new Blob([
-        xmlSerializer.serializeToString(this.xml).replaceAll('xmlns="http://www.w3.org/1999/xhtml"', "")
-      ], { type: "text/xml" }));
+      link.href = URL.createObjectURL(new Blob([this.serialize()], { type: "text/xml" }));
       link.download = `result.fcpxml`;
       document.body.appendChild(link);
       link.click();
       link.remove();
+    }
+    serialize() {
+      const xmlSerializer = new XMLSerializer();
+      return xmlSerializer.serializeToString(this.xml).replaceAll('xmlns="http://www.w3.org/1999/xhtml"', "");
     }
   };
   function setAttributes(element, Attrs) {

@@ -12,8 +12,8 @@ function rationalize (value: number) {
 }
 
 // Produces an XMLElement
-function createXMLElement(tagName: string) {
-  return document.implementation.createDocument(null, tagName).documentElement;
+function createXMLElement (tagName: string) {
+  return document.implementation.createDocument(null, tagName).documentElement
 }
 
 export class AssetClip {
@@ -191,26 +191,33 @@ export class FCPXML {
   }
 
   async download () {
+    // TODO: decouple this method
+    // with get() returns string form of xml
+    // and let the caller handle download()
+    // Reason: may support multiple format in future
+    // and each format would require a download() with duplicate code
 
     // Generate a download button (to be clicked on)
     let link = document.createElement('a')
 
     // Serialize and attach this.xml to the download button
-    const xmlSerializer = new XMLSerializer()
     link.href = URL.createObjectURL(
-      new Blob([
-      xmlSerializer.serializeToString(this.xml).
-      replaceAll('xmlns="http://www.w3.org/1999/xhtml"', '')],
-      { type: 'text/xml' }))
+      new Blob([this.serialize()], { type: 'text/xml' }))
     // link.href = URL.createObjectURL(new Blob([this.xml.documentElement.outerHTML],
     //   { type: 'text/xml' }))
     link.download = `result.fcpxml`
     document.body.appendChild(link)
-
     // Click the download button
     link.click()
     // Remove the download button
     link.remove()
+  }
+
+  serialize () {
+    // Returns string content of xml representation of fcpxml
+    // Precondition: write() is already called exactly once
+    const xmlSerializer = new XMLSerializer()
+    return xmlSerializer.serializeToString(this.xml).replaceAll('xmlns="http://www.w3.org/1999/xhtml"', '')
   }
 
 }
