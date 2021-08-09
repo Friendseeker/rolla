@@ -6,7 +6,6 @@
 //  - It exists as a module
 import * as _FFmpeg from '@ffmpeg/ffmpeg' // Hope this line doesn't cause any issue
 import { FCPXML, FFmpegOutputParser } from './fcpxml'
-// In worst case leverage esbuild, use standard import and leverage external feature
 
 declare global {
   const FFmpeg: typeof _FFmpeg

@@ -1,6 +1,4 @@
 import * as _math from 'mathjs'
-// import * as console from 'console' // Hope this line doesn't cause any issue
-// In worst case leverage esbuild, use standard import and leverage external feature
 
 declare global {
   const math: typeof _math
