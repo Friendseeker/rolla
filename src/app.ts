@@ -45,15 +45,17 @@ interface HTMLInputEvent extends Event {
 const main = async (event: Event) => {
 
   const message = document.getElementById('message')!
-  // OH MY GOD it picked it up
-  // The not selecting file causing error
-  // as it notified me automatically that videoFile can be null
-  if ((<HTMLInputEvent>event).target.files == null) { // Cast
+
+  // Check if user didn't select any files
+  // hopefully a redundant check (if upload event is called after user select valid file)
+  if ((<HTMLInputEvent>event).target.files == null) {
     document.getElementById('message')!.innerHTML =
       'Error: You did not select any files!'
     return -1  // TODO: determine if it does break execution
   }
-  let videoFile = event.target.files[0]
+
+  // Select the file user uploaded
+  let videoFile = (<HTMLInputEvent>event).target.files![0]
   const { name } = videoFile
 
   message.innerHTML = 'Loading ffmpeg-core.js'
