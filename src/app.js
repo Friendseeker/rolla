@@ -7,11 +7,11 @@
     return document.implementation.createDocument(null, tagName).documentElement;
   }
   var AssetClip = class {
-    constructor(cut, prevOffset, fileName) {
+    constructor(start, duration, offset, fileName) {
       this.assetClip = createXMLElement("asset-clip");
-      this.start = cut.start;
-      this.duration = cut.end - cut.start;
-      this.offset = prevOffset + this.duration;
+      this.start = start;
+      this.duration = duration;
+      this.offset = offset;
       setAttributes(this.assetClip, {
         "offset": rationalize(this.offset),
         "name": fileName,
@@ -31,7 +31,7 @@
     }
   };
   var FCPXML = class {
-    constructor(media, cuts) {
+    constructor(media, cuts = []) {
       this.xmlParser = new DOMParser();
       this.xml = this.xmlParser.parseFromString('<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE fcpxml><fcpxml version="1.9"><resources><format id="r0" width="1920" name="FFVideoFormat1080p30" height="1080" frameDuration="1/30s"/><format id="r1" width="1280" name="FFVideoFormat720p30" height="720" frameDuration="1/30s"/></resources><library><event name="output"><project name="output"><sequence format="r0" duration="271/15s" tcFormat="NDF" tcStart="3600/1s"><spine></spine></sequence></project></event></library></fcpxml>', "text/xml");
       this.cuts = [];
@@ -44,25 +44,54 @@
       this.setAssetClips();
     }
     setAssetClips() {
+      let durationAfterCuts = this.duration;
       for (let cut of this.cuts) {
-        this.duration -= cut.end - cut.start;
+        durationAfterCuts -= cut.end - cut.start;
       }
       const sequence = this.xml.querySelector("sequence");
       if (sequence == null) {
         console.error("Either Default xml preset or selection is flawed");
         return;
       }
-      sequence.setAttribute("duration", rationalize(this.duration));
+      sequence.setAttribute("duration", rationalize(durationAfterCuts));
       const spine = this.xml.querySelector("spine");
       if (spine == null) {
         console.error("Either Default xml preset or selection is flawed");
         return;
       }
-      let prevOffset = 3600;
+      let num_of_clips = this.cuts.length + 1;
+      let splits, starts, durations, offsets;
+      [splits, starts, durations, offsets] = [[], [], [], []];
+      splits.push(0, this.duration);
       for (let cut of this.cuts) {
-        const assetClip = new AssetClip(cut, prevOffset, this.media.name);
+        if (cut.start < 1 / 30) {
+          splits.push(cut.end);
+          splits.shift();
+          num_of_clips--;
+        } else if (cut.end > this.duration - 1 / 30) {
+          splits.push(cut.start);
+          splits.pop();
+          num_of_clips--;
+        } else if (cut.end - cut.start < 2 / 30) {
+          num_of_clips--;
+        } else
+          splits.push(cut.start, cut.end);
+      }
+      splits.sort((a, b) => a - b);
+      for (let i = 0; i < splits.length; i += 2) {
+        if (splits[i + 1] - splits[i] > 2 / 30) {
+          starts.push(splits[i]);
+          durations.push(splits[i + 1] - splits[i]);
+        } else
+          num_of_clips--;
+      }
+      offsets.push(3600);
+      for (let i = 1; i < num_of_clips; i++) {
+        offsets[i] = offsets[i - 1] + durations[i - 1];
+      }
+      for (let i = 0; i < num_of_clips; i++) {
+        const assetClip = new AssetClip(starts[i], durations[i], offsets[i], this.media.name);
         spine.appendChild(assetClip.assetClip);
-        prevOffset = assetClip.offset;
       }
     }
     setAsset() {
@@ -185,6 +214,10 @@
       try {
         const output = new Blob([data.buffer], { type: ".txt" });
         const cuts = await FFmpegOutputParser.getCuts(output);
+        if (cuts.length === 0) {
+          message.innerHTML = "No intervals are detected!";
+          return 0;
+        }
         const fcpxml = new FCPXML(videoFile, cuts);
         await fcpxml.write();
         await fcpxml.download();

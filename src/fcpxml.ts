@@ -20,21 +20,24 @@ export class AssetClip {
   duration: number
   offset: number
 
-  constructor (cut: Cut, prevOffset: number, fileName: string) {
-    this.start = cut.start
-    this.duration = cut.end - cut.start
-    this.offset = prevOffset + this.duration
+  constructor (start: number, duration: number, offset: number, fileName: string) {
+    this.start = start
+    this.duration = duration
+    this.offset = offset
     // Fill in above info in assetClip
     setAttributes(this.assetClip,
       {
         'offset': rationalize(this.offset),
+        // 'offset': this.offset.toString(), // TODO: restore DEBUG changes
         'name': fileName,
         'format': 'r1',
         'tcFormat': 'NDF',
         'start': rationalize(this.start),
+        // 'start': this.start.toString(),
         'ref': 'r2', // TODO: should r2 be factored out into separate variable?
         'enabled': '1',
         'duration': rationalize(this.duration)
+        // 'duration': this.duration.toString()
       })
   }
 }
@@ -48,6 +51,9 @@ export class Cut {
   constructor (start: number, end: number) {
     this.start = start
     this.end = end
+    // Reason for conditional check
+
+    // mitigation being perform boundary check
   }
 }
 
@@ -80,7 +86,7 @@ export class FCPXML {
 
   // Only to set the states
   // Don't do any processing
-  constructor (media: File, cuts: Cut[]) {
+  constructor (media: File, cuts: Cut[] = []) {
     this.media = media // If I want to determine media type (video/audio), add it here
     this.cuts = cuts
     // this.MAX_CUTS_TO_SAVE = MAX_CUTS_TO_SAVE
@@ -104,8 +110,9 @@ export class FCPXML {
 
     // Calculate duration (for <sequence>)
     // duration: duration of video after cut
+    let durationAfterCuts = this.duration
     for (let cut of this.cuts) {
-      this.duration -= cut.end - cut.start
+      durationAfterCuts -= cut.end - cut.start
     }
 
     // Add duration to <sequence>
@@ -114,7 +121,7 @@ export class FCPXML {
       console.error('Either Default xml preset or selection is flawed')
       return
     }
-    sequence.setAttribute('duration', rationalize(this.duration))
+    sequence.setAttribute('duration', rationalize(durationAfterCuts))
 
     // Set Asset-clips
 
@@ -125,11 +132,105 @@ export class FCPXML {
       return
     }
     // And add each Asset-clips as spine's child
-    let prevOffset = 3600 // TODO: merge all incidences of 3600 together
+
+    // Algorithm for generating Asset-clips
+
+    // Background
+    // Note Each asset clip has 3 attributes: start, duration, offset
+    // We use n to represent nth asset-clip in 0 based (order by ascending time)
+    // We use offsets, start, durations: number[] to represents the attributes for asset-clips
+    // For instance, offsets[n] represent offset in for nth asset clip
+
+    // Algorithm
+    // for offset, note offsets[n] = offsets[n - 1] + durations[n - 1]
+    // for start, we use an array splits: int[], for which stores number of splits in int
+    // For example, for a 10s long cut-less video, splits = [0, 10]
+    // For same video but with a cut from 2s - 4s, splits = [0, 2, 4, 10]
+    // Note every even index (0-based) element from splits (e.g. 0, 4) are start value
+    // and every odd elements are end value
+    // Therefore the steps are:
+    // Step 1: Generate splits
+    // For cut in this.cuts, push cut.start and cut.end to splits
+    // Sort splits
+    // Step 2: Loop through splits by index (i), for each splits[i]
+    // if i is even, push splits[i] to starts and splits[i + 1] - splits[i] to durations
+    // otherwise do nothing
+    // As optimization, do i += 2 instead of i++ (this way i is always even, skips over 50% of elements)
+    // Step 3: let offsets[0] = timeCode (in this case 3600), then apply
+    // offsets[n] = offsets[n - 1] + durations[n - 1] iteratively to compute offsets
+    // Step 4: One for loop to:
+    // generate an assetClip
+    // add the generated asset-clip to spine via spine.appendChild(assetClip.assetClip)
+
+    let num_of_clips = this.cuts.length + 1 // total number of asset-clips
+    // e.g. we have 1 asset-clip for 0 cuts, 2 asset-clips for 1 cut, and so forth
+
+    let splits: number[], starts: number[], durations: number[], offsets: number[]
+    // splits = starts = durations = offsets = [] // leaving this line here to show how stupid I am
+    // to refer four variables to same [] array
+    [splits, starts, durations, offsets] = [[], [], [], []]  // dumb but trustworthy way
+
+    splits.push(0, this.duration)
     for (let cut of this.cuts) {
-      const assetClip = new AssetClip(cut, prevOffset, this.media.name)
+      // Explanation:
+      // ffmpeg outputs weird values such as -2.08333e-05 near start of video
+      // such value being very close to 0 (both would be rounded
+      // to 0/1s in fraction, causing Da Vinci to ill-behave.
+      // There's also the need of considering if a value at very end is close
+      // to this.duration
+
+      // Therefore, the mitigation being
+      // say we have [0, 10] as split as a cut is [0, 5]
+      // clearly, the split should be [5, 10]
+      // therefore whenever cut.start is close to 0
+      // add cut.end, remove 0, and reduce num_of_clips by 1
+      // and vise versa
+      if (cut.start < 1 / 30) {
+        splits.push(cut.end)
+        splits.shift()
+        num_of_clips--
+      } else if (cut.end > (this.duration - 1 / 30)) {
+        splits.push(cut.start)
+        splits.pop()
+        num_of_clips--
+      } else if (cut.end - cut.start < 2 / 30) {
+        num_of_clips--
+      }
+      // Implement Case 1 Mitigation: Ignore
+      else splits.push(cut.start, cut.end)
+
+      // TODO: address the potential Edge Case of entire video being silent
+      // if it causes issue, determine if checks should be placed upstream or there
+    }
+    splits.sort((a, b) => a - b)
+
+    // Mitigation for
+    // Case 1: start: 89.3867, end: 89.394
+    // Case 2: end: 89.3867, start: 89.394
+
+    // Mitigation: for case 1, I can ignore small cuts
+    // when adding them to splits
+    // For case 2, say if I have splits [0, 1, 5, 5.0000001, 6, 10]
+    // After placing cuts [1, 5] and [5.0000001, 6]
+    // Then Ideally, the two close cuts should be merged into one cut
+    // Which can be done by one pass through splits (index i)
+    // and for every even i, remove or ignore them
+    for (let i = 0; i < splits.length; i += 2) {
+      if (splits[i + 1] - splits[i] > 2 / 30) {
+        // Implement Case 2 Mitigation: Ignore
+        starts.push(splits[i])
+        durations.push(splits[i + 1] - splits[i])
+      } else num_of_clips--
+    }
+
+    offsets.push(3600)
+    for (let i = 1; i < num_of_clips; i++) {
+      offsets[i] = offsets[i - 1] + durations[i - 1]
+    }
+
+    for (let i = 0; i < num_of_clips; i++) {
+      const assetClip = new AssetClip(starts[i], durations[i], offsets[i], this.media.name)
       spine.appendChild(assetClip.assetClip)
-      prevOffset = assetClip.offset
     }
   }
 
