@@ -87,6 +87,10 @@ const main = async (event: Event) => {
 
       // Parse output to cuts
       const cuts = await FFmpegOutputParser.getCuts(output)
+      if (cuts.length === 0) {
+        message.innerHTML = 'No intervals are detected!'
+        return 0
+      }
       const fcpxml = new FCPXML(videoFile, cuts)
       await fcpxml.write()
       await fcpxml.download()
