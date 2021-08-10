@@ -8,7 +8,7 @@ import * as _FFmpeg from '@ffmpeg/ffmpeg' // Hope this line doesn't cause any is
 import { FCPXML, FFmpegOutputParser } from './fcpxml'
 
 declare global {
-  const FFmpeg: typeof _FFmpeg
+  const FFmpeg: typeof _FFmpeg // eslint-disable-line no-unused-vars
 }
 
 // Key components for ffmpeg library, declared to be initialized later in load()

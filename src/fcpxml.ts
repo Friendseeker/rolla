@@ -1,7 +1,7 @@
 import * as _math from 'mathjs'
 
 declare global {
-  const math: typeof _math
+  const math: typeof _math // eslint-disable-line no-unused-vars
 }
 
 // Rationalize a decimal to fraction (in seconds)
