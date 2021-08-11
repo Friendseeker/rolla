@@ -19,8 +19,8 @@
         "unicorn"
     ],
     "globals": {
-        "math": true,
-        "FFmpeg": true
+        "math": "readonly",
+        "FFmpeg": "readonly"
     },
     "rules": {
     }
