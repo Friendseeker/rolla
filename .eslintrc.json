@@ -4,7 +4,9 @@
         "es2021": true
     },
     "extends": [
-        "standard"
+        "standard",
+        "plugin:sonarjs/recommended",
+        "plugin:unicorn/recommended"
     ],
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
@@ -12,12 +14,15 @@
         "sourceType": "script"
     },
     "plugins": [
-        "@typescript-eslint"
+        "@typescript-eslint",
+        "sonarjs",
+        "unicorn"
     ],
     "globals": {
-        "math": true,
-        "FFmpeg": true
+        "math": "readonly",
+        "FFmpeg": "readonly"
     },
     "rules": {
+        "unicorn/prevent-abbreviations": "off"
     }
 }
