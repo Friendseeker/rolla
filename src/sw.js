@@ -27,6 +27,6 @@ async function networkFirst (req) {
     await cache.put(req, fresh.clone())
     return fresh
   } catch {
-    return await cache.match(req)
+    return cache.match(req)
   }
 }
