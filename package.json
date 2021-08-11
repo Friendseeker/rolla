@@ -4,7 +4,7 @@
   "description": "Automatic A-Roll Editor",
   "main": "dev/tools/server.js",
   "scripts": {
-    "test": "echo \"TODO Need to Implement tests with Selenium\"",
+    "test": "npx eslint . --ext .ts",
     "start": "rsync dev/tools/server.js src/server.js && node src/server.js",
     "build": "esbuild src/app.ts --bundle --outfile=src/app.js --target=chrome95,firefox92"
   },

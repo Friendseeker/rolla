@@ -11,6 +11,7 @@ function rationalize (value: number) {
 
 // Produces an XMLElement
 function createXMLElement (tagName: string) {
+  // eslint-disable-next-line unicorn/no-null
   return document.implementation.createDocument(null, tagName).documentElement
 }
 
@@ -115,20 +116,14 @@ export class FCPXML {
 
     // Add duration to <sequence>
     const sequence = this.xml.querySelector('sequence')
-    if (sequence == null) {
-      console.error('Either Default xml preset or selection is flawed')
-      return
-    }
-    sequence.setAttribute('duration', rationalize(durationAfterCuts))
+
+    sequence!.setAttribute('duration', rationalize(durationAfterCuts))
 
     // Set Asset-clips
 
     // Selecting spine
     const spine = this.xml.querySelector('spine')
-    if (spine == null) {
-      console.error('Either Default xml preset or selection is flawed')
-      return
-    }
+
     // And add each Asset-clips as spine's child
 
     // Algorithm for generating Asset-clips
@@ -232,7 +227,7 @@ export class FCPXML {
 
     for (let i = 0; i < numOfClips; i++) {
       const assetClip = new AssetClip(starts[i], durations[i], offsets[i], this.media.name)
-      spine.appendChild(assetClip.assetClip)
+      spine!.append(assetClip.assetClip)
     }
   }
 
@@ -260,14 +255,11 @@ export class FCPXML {
       kind: 'original-media',
       src: '' // TODO: determine if there's a better way to check src
     })
-    asset.appendChild(mediaRep)
+    asset.append(mediaRep)
     // Defensive coding
     // Ideally this should never be executed
-    if (resources == null) {
-      console.error('Either Default xml preset or selection is flawed')
-      return
-    }
-    resources.appendChild(asset)
+
+    resources!.append(asset)
   }
 
   async setDuration () {
@@ -277,7 +269,7 @@ export class FCPXML {
     video.load() // not sure if this is needed
 
     // Wait for the video to finish loading
-    await new Promise<void>(resolve => (video.ondurationchange = () => resolve()))
+    await new Promise<void>(resolve => (video.addEventListener('durationchange', () => resolve())))
 
     this.duration = video.duration
     video.remove()
@@ -288,7 +280,7 @@ export class FCPXML {
   }
 
   async addCuts (cuts: Cut[]) {
-    this.cuts.concat(cuts)
+    this.cuts.push(...cuts)
   }
 
   async download () {
@@ -307,7 +299,7 @@ export class FCPXML {
     // link.href = URL.createObjectURL(new Blob([this.xml.documentElement.outerHTML],
     //   { type: 'text/xml' }))
     link.download = 'result.fcpxml'
-    document.body.appendChild(link)
+    document.body.append(link)
     // Click the download button
     link.click()
     // Remove the download button
@@ -331,8 +323,8 @@ function setAttributes (element: Element, Attrs: { [key: string]: string }) {
 // Parses output (blob) from ffmpeg
 // and convert to cuts
 // Credit to Aidan
-export class FFmpegOutputParser {
-  static async getCuts (ffmpegOut: Blob) {
+export const FFmpegOutputParser = {
+  async getCuts (ffmpegOut: Blob) {
     //
     const cuts: Cut[] = []
     const out = await ffmpegOut.text()
@@ -341,18 +333,18 @@ export class FFmpegOutputParser {
 
     const startString = 'silence_start'
     const endString = 'silence_end'
-    const times = [-1.0, -1.0]
+    const times = [-1, -1]
     for (const line of split) {
       if (line.includes(startString)) {
-        times[0] = parseFloat(line.split('=')[1])
+        times[0] = Number.parseFloat(line.split('=')[1])
       } else if (line.includes(endString)) {
-        times[1] = parseFloat(line.split('=')[1])
+        times[1] = Number.parseFloat(line.split('=')[1])
       }
-      if (!times.includes(-1.0)) {
+      if (!times.includes(-1)) {
         cuts.push(new Cut(times[0], times[1]))
         // console.log(`${times[0]} ${times[1]}`)
-        times[0] = -1.0
-        times[1] = -1.0
+        times[0] = -1
+        times[1] = -1
       }
     }
     return cuts

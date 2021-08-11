@@ -26,8 +26,7 @@ async function networkFirst (req) {
     const fresh = await fetch(req)
     await cache.put(req, fresh.clone())
     return fresh
-  } catch (e) {
-    const cached = await cache.match(req)
-    return cached
+  } catch {
+    return await cache.match(req)
   }
 }

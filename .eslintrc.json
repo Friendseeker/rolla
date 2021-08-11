@@ -23,5 +23,6 @@
         "FFmpeg": "readonly"
     },
     "rules": {
+        "unicorn/prevent-abbreviations": "off"
     }
 }

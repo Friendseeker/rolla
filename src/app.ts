@@ -15,13 +15,13 @@ declare global {
 let createFFmpeg, fetchFile: { (data: string | File | Blob): Promise<Uint8Array> }, ffmpeg: _FFmpeg.FFmpeg
 
 // Execute load() when window (main page) loaded
-window.onload = () => load()
+window.addEventListener('load', () => load())
 
 // Loads FFmpeg library if browser is supported
 // Otherwise display error and return -1 prematurely
 async function load () {
   if (typeof SharedArrayBuffer === 'undefined') {
-    document.getElementById('message')!.innerHTML =
+    document.querySelector('#message')!.innerHTML =
       'Error: Please use latest Chrome/Firefox/Edge'
     return -1 // TODO: determine if it does break execution
   }
@@ -42,12 +42,12 @@ interface HTMLInputEvent extends Event {
 // Detects the silent interval
 // and displays an fcpxml download prompt (for which contains the silent intervals)
 const main = async (event: Event) => {
-  const message = document.getElementById('message')!
+  const message = document.querySelector('#message')!
 
   // Check if user didn't select any files
   // hopefully a redundant check (if upload event is called after user select valid file)
-  if ((<HTMLInputEvent>event).target.files == null) {
-    document.getElementById('message')!.innerHTML =
+  if ((<HTMLInputEvent>event).target.files === undefined) {
+    document.querySelector('#message')!.innerHTML =
       'Error: You did not select any files!'
     return -1 // TODO: determine if it does break execution
   }
@@ -96,7 +96,7 @@ const main = async (event: Event) => {
     } catch (error) {
       console.log(error)
     }
-  } catch (error) {
+  } catch {
     message.innerHTML = 'Input File has no audio track'
     // eslint-disable-next-line promise/param-names
     await new Promise(r => setTimeout(r, 1000)) // sleep for 1 sec
@@ -105,5 +105,5 @@ const main = async (event: Event) => {
 }
 
 // Execute main when user finishes uploading
-const elm = document.getElementById('media-upload')
+const elm = document.querySelector('#media-upload')
 elm!.addEventListener('change', main)
