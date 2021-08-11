@@ -81,8 +81,6 @@ const main = async (event: Event) => {
     // const objectURL = URL.createObjectURL(new Blob([data.buffer], {type: '.txt'}));
     try {
       const output = new Blob([data.buffer], { type: '.txt' })
-      // const objectURL = URL.createObjectURL(output); // might not be needed
-      // await download(objectURL)
 
       // Parse output to cuts
       const cuts = await FFmpegOutputParser.getCuts(output)
