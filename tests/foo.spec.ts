@@ -1,6 +1,5 @@
 import { test, expect } from '@playwright/test'
 
-
 test('test', async ({ page }) => {
   // Go to https://rolla-new.netlify.app/
   await page.goto('https://rolla-new.netlify.app/') // placeholder url, will replace
