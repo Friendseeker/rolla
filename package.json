@@ -23,7 +23,7 @@
   "homepage": "https://github.com/Friendseeker/rolla#readme",
   "devDependencies": {
     "@ffmpeg/ffmpeg": "^0.10.1",
-    "@playwright/test": "^1.13.1",
+    "@playwright/test": "^1.14.0",
     "@typescript-eslint/eslint-plugin": "^4.29.1",
     "@typescript-eslint/parser": "^4.29.1",
     "esbuild": "^0.12.20",
