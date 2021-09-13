@@ -23,7 +23,7 @@
   "homepage": "https://github.com/Friendseeker/rolla#readme",
   "devDependencies": {
     "@ffmpeg/ffmpeg": "^0.10.1",
-    "@typescript-eslint/eslint-plugin": "^4.29.1",
+    "@typescript-eslint/eslint-plugin": "^4.31.0",
     "@typescript-eslint/parser": "^4.29.1",
     "esbuild": "^0.12.19",
     "eslint": "^7.32.0",
